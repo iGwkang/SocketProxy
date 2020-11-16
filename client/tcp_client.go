@@ -105,10 +105,10 @@ func (c *TcpClient) Handshake(serConn net.Conn, destAddr []byte) (newConn net.Co
 		xorByte := common.GetNonZeroNumber()
 		_, err = serConn.Write([]byte{xorByte})
 		newConn, _ = common.NewXorCipher(xorByte, serConn)
-		_, err = newConn.Write([]byte(ClientConfig.Password))
-		_, err = newConn.Write(destAddr[:])
 	default: // tls
 		newConn = tls.Client(serConn, TLSConfig)
 	}
+	_, err = newConn.Write([]byte(ClientConfig.Password))
+	_, err = newConn.Write(destAddr[:])
 	return
 }

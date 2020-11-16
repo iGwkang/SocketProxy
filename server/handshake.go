@@ -89,7 +89,7 @@ func getDestAddr(conn net.Conn) (ip, port string, err error) {
 	addrByte := [6]byte{}
 	n, err := io.ReadFull(conn, addrByte[:])
 	if n <= 0 || err != nil {
-		return "", "", errors.New("getDstAddr error")
+		return "", "", err
 	}
 
 	ip, port = common.AddrToString(addrByte[:])

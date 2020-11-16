@@ -53,9 +53,10 @@ func LoadConfig() {
 
 func InitTLSConfig() {
 	TLSConfig = &tls.Config{
-		ServerName: "SocketProxy",
-		MaxVersion: tls.VersionTLS13,
-		MinVersion: tls.VersionTLS12,
+		ServerName:         "SocketProxy",
+		InsecureSkipVerify: true,
+		MaxVersion:         tls.VersionTLS13,
+		MinVersion:         tls.VersionTLS12,
 		CipherSuites: []uint16{
 			tls.TLS_AES_128_GCM_SHA256,
 			tls.TLS_AES_256_GCM_SHA384,
