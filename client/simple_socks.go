@@ -4,8 +4,9 @@ package main
 
 import (
 	"errors"
-	"github.com/miekg/dns"
 	"net"
+
+	"github.com/miekg/dns"
 )
 
 func GetSockDestAddr(conn net.Conn) (addr []byte, err error) {

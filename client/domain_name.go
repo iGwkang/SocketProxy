@@ -3,12 +3,13 @@ package main
 import (
 	. "SocketProxy/logger"
 	"bufio"
-	"github.com/patrickmn/go-cache"
 	"io"
 	"net/http"
 	"os"
 	"regexp"
 	"time"
+
+	"github.com/patrickmn/go-cache"
 )
 
 // 走代理的域名
@@ -73,7 +74,7 @@ func DomainIsProxy(domain string) bool {
 	}
 
 	// 不走代理的列表
-	for i:=0; i < len(bypass_list); i++ {
+	for i := 0; i < len(bypass_list); i++ {
 		if bypass_list[i].MatchString(domain) {
 			domainCache.Set(domain, false, 0)
 			return false
@@ -81,7 +82,7 @@ func DomainIsProxy(domain string) bool {
 	}
 
 	// 走代理的列表
-	for i:=0; i < len(proxy_list); i++ {
+	for i := 0; i < len(proxy_list); i++ {
 		if proxy_list[i].MatchString(domain) {
 			domainCache.Set(domain, true, 0)
 			return true

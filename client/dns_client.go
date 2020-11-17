@@ -3,9 +3,10 @@ package main
 import (
 	"SocketProxy/common"
 	. "SocketProxy/logger"
-	"github.com/miekg/dns"
 	"net"
 	"sync"
+
+	"github.com/miekg/dns"
 )
 
 type DNSClient struct {

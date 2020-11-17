@@ -21,7 +21,7 @@ func NewTcpClient() *TcpClient {
 }
 
 func (c *TcpClient) getServerConn() (net.Conn, error) {
-	for i:=0; i < len(c.serverAddrs); i++ {
+	for i := 0; i < len(c.serverAddrs); i++ {
 		conn, err := net.DialTimeout("tcp", c.serverAddrs[i], ClientConfig.Timeout)
 		if err == nil {
 			return conn, err
@@ -101,13 +101,13 @@ func (c *TcpClient) TcpClientHandle(conn net.Conn) {
 			Logger.Warn(err)
 			return
 		}
-		Logger.Debugf("use cipherType: %#v, start relay %s <--> %s", cipherType, conn.RemoteAddr(), serverConn.RemoteAddr())
+		Logger.Debugf("use cipherType: %#v, start relay %s <--> %s <--> %s", cipherType, conn.RemoteAddr(), serverConn.RemoteAddr(), ip+":"+port)
 		common.Relay(serverConn, conn)
 	}
 }
 
 // 与服务端握手
-func (c *TcpClient) Handshake(serConn net.Conn, destAddr []byte) (newConn net.Conn, cipherType uint16,  err error) {
+func (c *TcpClient) Handshake(serConn net.Conn, destAddr []byte) (newConn net.Conn, cipherType uint16, err error) {
 	_, err = serConn.Write([]byte{ClientConfig.Encryption})
 	switch ClientConfig.Encryption {
 	case 0: // 异或
