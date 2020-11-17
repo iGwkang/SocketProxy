@@ -50,15 +50,15 @@ func (c *TcpClient) Run() {
 			Logger.Error(err)
 			break
 		}
-		go func() {
-			defer conn.Close()
-			c.TcpClientHandle(conn)
-		}()
+		go c.TcpClientHandle(conn)
+
 	}
 	return
 }
 
 func (c *TcpClient) TcpClientHandle(conn net.Conn) {
+	defer conn.Close()
+
 	if ClientConfig.Timeout != 0 {
 		conn.(*net.TCPConn).SetKeepAlivePeriod(ClientConfig.Timeout)
 	}
@@ -66,35 +66,44 @@ func (c *TcpClient) TcpClientHandle(conn net.Conn) {
 	// 获取目标地址
 	addr, err := GetSockDestAddr(conn)
 	if err != nil {
+		Logger.Warn(err)
 		return
 	}
 	// 判断是否在白名单
 	ip, port := common.AddrToString(addr)
-	Logger.Debug("request:", ip, ":", port)
+
 	if !IPisProxy(ip) {
 		serverConn, err := net.DialTimeout("tcp", ip+":"+port, ClientConfig.Timeout)
 		if err != nil {
+			Logger.Warn(err)
 			return
 		}
 		defer serverConn.Close()
+
+		if ClientConfig.Timeout != 0 {
+			serverConn.(*net.TCPConn).SetKeepAlivePeriod(ClientConfig.Timeout)
+		}
+
 		common.Relay(serverConn, conn)
 	} else {
 		// 与服务器建立连接
 		serverConn, err := c.getServerConn()
 		if err != nil {
+			Logger.Warn(err)
 			return
 		}
-
-		newServerConn, err := c.Handshake(serverConn, addr)
-		if err != nil {
+		defer func() {
 			serverConn.Close()
+		}()
+
+		serverConn, err = c.Handshake(serverConn, addr)
+		if err != nil {
+			Logger.Warn(err)
 			return
 		}
-		defer newServerConn.Close()
 
-		common.Relay(newServerConn, conn)
+		common.Relay(serverConn, conn)
 	}
-
 }
 
 // 与服务端握手
@@ -106,7 +115,10 @@ func (c *TcpClient) Handshake(serConn net.Conn, destAddr []byte) (newConn net.Co
 		_, err = serConn.Write([]byte{xorByte})
 		newConn, _ = common.NewXorCipher(xorByte, serConn)
 	default: // tls
-		newConn = tls.Client(serConn, TLSConfig)
+		tlsConn := tls.Client(serConn, TLSConfig)
+		newConn = tlsConn
+		err = tlsConn.Handshake()
+		//Logger.Debugf("use Cipher %#v", tlsConn.ConnectionState().CipherSuite)
 	}
 	_, err = newConn.Write([]byte(ClientConfig.Password))
 	_, err = newConn.Write(destAddr[:])
