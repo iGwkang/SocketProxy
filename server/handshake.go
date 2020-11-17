@@ -2,7 +2,6 @@ package main
 
 import (
 	"SocketProxy/common"
-	. "SocketProxy/logger"
 	"crypto/tls"
 	"errors"
 	"io"
@@ -10,11 +9,11 @@ import (
 )
 
 // 握手
-func Handshake(conn net.Conn) (newConn net.Conn, ip, port string, err error) {
+func Handshake(conn net.Conn) (newConn net.Conn, ip, port string, cipherType uint16, err error) {
 	buf := make([]byte, 1)
 	n, err := conn.Read(buf)
 	if n <= 0 || err != nil {
-		return nil, "", "", errors.New("Handshake Error")
+		return nil, "", "", 0, err
 	}
 
 	// 加密类型
@@ -22,17 +21,15 @@ func Handshake(conn net.Conn) (newConn net.Conn, ip, port string, err error) {
 	case 0:
 		newConn, err = xorHandshake(conn)
 	default:
-		newConn, err = tlsHandshake(conn)
+		newConn, cipherType, err = tlsHandshake(conn)
 	}
 	if err != nil {
-		Logger.Warn("Handshake Error:", err)
 		return
 	}
 	// 密码验证
 	err = verifyClientPassword(newConn)
 	if err != nil {
 		newConn.Close()
-		Logger.Warn(err)
 		return
 	}
 
@@ -40,14 +37,13 @@ func Handshake(conn net.Conn) (newConn net.Conn, ip, port string, err error) {
 	ip, port, err = getDestAddr(newConn)
 	if err != nil {
 		newConn.Close()
-		Logger.Warn(err)
 		return
 	}
 
 	// 判断是否在内网
 	if common.IsIntranetAddress(ip) {
 		newConn.Close()
-		Logger.Warn(ip, "is IntranetAddress!")
+		err = errors.New(ip + " is IntranetAddress")
 		return
 	}
 	return
@@ -67,8 +63,11 @@ func xorHandshake(conn net.Conn) (newConn net.Conn, err error) {
 	return
 }
 
-func tlsHandshake(conn net.Conn) (newConn net.Conn, err error) {
-	newConn = tls.Server(conn, TLSConfig)
+func tlsHandshake(conn net.Conn) (newConn net.Conn, cipherType uint16, err error) {
+	tlsConn := tls.Server(conn, TLSConfig)
+	err = tlsConn.Handshake()
+	cipherType = tlsConn.ConnectionState().CipherSuite
+	newConn = tlsConn
 	return
 }
 
@@ -77,7 +76,7 @@ func verifyClientPassword(conn net.Conn) (err error) {
 	// 密码校验
 	_, err = io.ReadFull(conn, passwd)
 	if err != nil {
-		return errors.New("password verification failed")
+		return err
 	}
 	if string(passwd) != ServerConfig.Password {
 		return errors.New("password verification failed, password:" + string(passwd))

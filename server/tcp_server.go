@@ -22,13 +22,12 @@ func (s *TcpServer) Run() {
 	wg.Add(len(s.listenAddrs))
 	for i := 0; i < len(s.listenAddrs); i++ {
 		go func(addr string) {
-			_ = TcpServerListenAddr(addr)
-			wg.Done()
+			defer wg.Done()
+			TcpServerListenAddr(addr)
 		}(s.listenAddrs[i])
 
 	}
 	wg.Wait()
-	return
 }
 
 func TcpServerListenAddr(addr string) error {
@@ -57,13 +56,14 @@ func TcpServerHandle(conn net.Conn) {
 		_ = conn.(*net.TCPConn).SetKeepAlivePeriod(ServerConfig.Timeout)
 	}
 
-	newConn, ip, port, err := Handshake(conn)
+	newConn, ip, port, cipherType, err := Handshake(conn)
 	if err != nil {
+		Logger.Warn("Remote Addr: ", conn.RemoteAddr(), " Handshake error: ", err)
 		conn.Close()
 		return
 	}
 	defer newConn.Close()
-	Logger.Debug("request:", ip, ":", port)
+
 	// 访问目标地址
 	dstConn, err := net.DialTimeout("tcp", ip+":"+port, ServerConfig.Timeout)
 	if err != nil {
@@ -74,6 +74,6 @@ func TcpServerHandle(conn net.Conn) {
 	if ServerConfig.Timeout != 0 {
 		_ = dstConn.(*net.TCPConn).SetKeepAlivePeriod(ServerConfig.Timeout)
 	}
-
+	Logger.Debugf("use cipherType: %#v, start relay %s <--> %s", cipherType, newConn.RemoteAddr(), dstConn.RemoteAddr())
 	common.Relay(dstConn, newConn)
 }

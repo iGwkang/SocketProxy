@@ -30,7 +30,7 @@ func InitWhiteIPList() error {
 			})
 		}
 	}
-
+	whiteIPRange = whiteIPRange[:len(whiteIPRange):len(whiteIPRange)]
 	// TODO: sort
 
 	Logger.Info("Init WhiteIP List. [white ip list] Num =", len(whiteIPRange))

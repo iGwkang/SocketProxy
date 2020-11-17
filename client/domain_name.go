@@ -59,7 +59,8 @@ func InitDomainList() (err error) {
 			}
 		}
 	}
-
+	proxy_list = proxy_list[:len(proxy_list):len(proxy_list)]
+	bypass_list = proxy_list[:len(bypass_list):len(bypass_list)]
 	Logger.Info("init DomainList. [proxy_list] Num =", len(proxy_list), " [bypass_list] Num =", len(bypass_list))
 	return
 }

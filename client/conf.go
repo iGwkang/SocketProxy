@@ -31,7 +31,8 @@ var ClientConfig = struct {
 	ListenDNSAddr:  "0.0.0.0:25353",
 	CNDNSServer:    "223.5.5.5:53",
 	Timeout:        5,
-	Encryption:     0,
+	Encryption:     1,
+	Password:       "SocketProxy",
 }
 
 var TLSConfig *tls.Config

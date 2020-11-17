@@ -83,7 +83,7 @@ func (c *TcpClient) TcpClientHandle(conn net.Conn) {
 		if ClientConfig.Timeout != 0 {
 			serverConn.(*net.TCPConn).SetKeepAlivePeriod(ClientConfig.Timeout)
 		}
-
+		Logger.Debugf("start relay %s <--> %s", conn.RemoteAddr(), serverConn.RemoteAddr())
 		common.Relay(serverConn, conn)
 	} else {
 		// 与服务器建立连接
@@ -96,29 +96,30 @@ func (c *TcpClient) TcpClientHandle(conn net.Conn) {
 			serverConn.Close()
 		}()
 
-		serverConn, err = c.Handshake(serverConn, addr)
+		serverConn, cipherType, err := c.Handshake(serverConn, addr)
 		if err != nil {
 			Logger.Warn(err)
 			return
 		}
-
+		Logger.Debugf("use cipherType: %#v, start relay %s <--> %s", cipherType, conn.RemoteAddr(), serverConn.RemoteAddr())
 		common.Relay(serverConn, conn)
 	}
 }
 
 // 与服务端握手
-func (c *TcpClient) Handshake(serConn net.Conn, destAddr []byte) (newConn net.Conn, err error) {
+func (c *TcpClient) Handshake(serConn net.Conn, destAddr []byte) (newConn net.Conn, cipherType uint16,  err error) {
 	_, err = serConn.Write([]byte{ClientConfig.Encryption})
 	switch ClientConfig.Encryption {
 	case 0: // 异或
 		xorByte := common.GetNonZeroNumber()
 		_, err = serConn.Write([]byte{xorByte})
 		newConn, _ = common.NewXorCipher(xorByte, serConn)
+		cipherType = 0x00
 	default: // tls
 		tlsConn := tls.Client(serConn, TLSConfig)
 		newConn = tlsConn
 		err = tlsConn.Handshake()
-		//Logger.Debugf("use Cipher %#v", tlsConn.ConnectionState().CipherSuite)
+		cipherType = tlsConn.ConnectionState().CipherSuite
 	}
 	_, err = newConn.Write([]byte(ClientConfig.Password))
 	_, err = newConn.Write(destAddr[:])
