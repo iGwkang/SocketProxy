@@ -20,8 +20,10 @@ func Handshake(conn net.Conn) (newConn net.Conn, ip, port string, cipherType uin
 	switch buf[0] {
 	case 0:
 		newConn, err = xorHandshake(conn)
-	default:
+	case 1:
 		newConn, cipherType, err = tlsHandshake(conn)
+	default:
+		err = errors.New("encryption type not supported")
 	}
 	if err != nil {
 		return
@@ -62,9 +64,9 @@ func xorHandshake(conn net.Conn) (newConn net.Conn, err error) {
 
 func tlsHandshake(conn net.Conn) (newConn net.Conn, cipherType uint16, err error) {
 	tlsConn := tls.Server(conn, TLSConfig)
+	newConn = tlsConn
 	err = tlsConn.Handshake()
 	cipherType = tlsConn.ConnectionState().CipherSuite
-	newConn = tlsConn
 	return
 }
 

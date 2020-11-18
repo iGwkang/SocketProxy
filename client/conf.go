@@ -35,7 +35,7 @@ var ClientConfig = struct {
 	Password:       "SocketProxy",
 }
 
-var TLSConfig *tls.Config
+var TLSConfig = map[string]*tls.Config{}
 
 func LoadConfig() {
 	data, err := ioutil.ReadFile(*configPath)
@@ -53,11 +53,15 @@ func LoadConfig() {
 }
 
 func InitTLSConfig() {
-	TLSConfig = &tls.Config{
-		ServerName:         "SocketProxy",
-		InsecureSkipVerify: true,
-		MinVersion:         tls.VersionTLS12,
-		CipherSuites: []uint16{
+	for i := 0; i < len(ClientConfig.TcpServerAddrs); i++ {
+		serverHost := ClientConfig.TcpServerAddrs[i][:strings.IndexByte(ClientConfig.TcpServerAddrs[i], ':')]
+		TLSConfig[ClientConfig.TcpServerAddrs[i]] = &tls.Config{
+			InsecureSkipVerify: true,
+			VerifyConnection: func(cs tls.ConnectionState) error {
+				return cs.PeerCertificates[0].VerifyHostname(serverHost)
+			},
+			MinVersion: tls.VersionTLS12,
+			CipherSuites: []uint16{
 			tls.TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,
 			tls.TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305,
 			tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
@@ -73,6 +77,7 @@ func InitTLSConfig() {
 			tls.TLS_AES_128_GCM_SHA256,
 			tls.TLS_AES_256_GCM_SHA384,
 			tls.TLS_CHACHA20_POLY1305_SHA256,
-		},
+			},
+		}
 	}
 }

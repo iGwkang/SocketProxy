@@ -115,11 +115,17 @@ func (c *TcpClient) Handshake(serConn net.Conn, destAddr []byte) (newConn net.Co
 		_, err = serConn.Write([]byte{xorByte})
 		newConn, _ = common.NewXorCipher(xorByte, serConn)
 		cipherType = 0x00
-	default: // tls
-		tlsConn := tls.Client(serConn, TLSConfig)
+	case 1: // tls
+		tlsConn := tls.Client(serConn, TLSConfig[serConn.RemoteAddr().String()])
 		newConn = tlsConn
 		err = tlsConn.Handshake()
+		if err != nil {
+			return
+		}
 		cipherType = tlsConn.ConnectionState().CipherSuite
+	default:
+		err = errors.New("encryption type not supported")
+		return
 	}
 	_, err = newConn.Write([]byte(ClientConfig.Password))
 	_, err = newConn.Write(destAddr[:])

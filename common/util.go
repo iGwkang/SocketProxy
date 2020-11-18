@@ -5,6 +5,7 @@ import (
 	"encoding/binary"
 	"io"
 	"net"
+	"net/http"
 	"strconv"
 	"time"
 )
@@ -31,6 +32,24 @@ func AddrToString(addr []byte) (ip, port string) {
 	ip += strconv.FormatInt(int64(addr[3]), 10)
 	port = strconv.FormatInt(int64(binary.BigEndian.Uint16(addr[4:6])), 10)
 	return
+}
+
+// 获取外网ip
+func GetExternalIP() net.IP {
+	resp, err := http.Get("https://ifconfig.me")
+	if err != nil {
+		return nil
+	}
+	defer resp.Body.Close()
+
+	buf := make([]byte, 512)
+
+	n, err := resp.Body.Read(buf)
+	if err != nil {
+		return nil
+	}
+	ip := string(buf[:n])
+	return net.ParseIP(ip).To4()
 }
 
 // 交换两个连接的数据

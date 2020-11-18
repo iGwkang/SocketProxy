@@ -1,17 +1,12 @@
 package main
 
 import (
+	"SocketProxy/common"
 	. "SocketProxy/logger"
-	"crypto/rand"
-	"crypto/rsa"
 	"crypto/tls"
-	"crypto/x509"
 	"encoding/json"
-	"encoding/pem"
 	"flag"
-	"fmt"
 	"io/ioutil"
-	"math/big"
 	"time"
 )
 
@@ -49,20 +44,20 @@ func LoadConfig() {
 }
 
 func InitTLSConfig() {
-	cert, err := generateCert()
+	// 获取本机外网ip
+	myIP := common.GetExternalIP()
+	if myIP == nil {
+		Logger.Fatal("get external ip fatal")
+	}
+	Logger.Info("my external ip is ", myIP)
+	// 生成证书
+	cert, err := common.GenerateCert(myIP)
 	if err != nil {
 		Logger.Fatal(err)
 	}
 	TLSConfig = &tls.Config{
-		ServerName:   "SocketProxy",
 		Certificates: []tls.Certificate{cert},
-		VerifyConnection: func(cs tls.ConnectionState) error {
-			if cs.ServerName != TLSConfig.ServerName {
-				return fmt.Errorf("client server name is %s", cs.ServerName)
-			}
-			return nil
-		},
-		MinVersion: tls.VersionTLS12,
+		MinVersion:   tls.VersionTLS12,
 		CipherSuites: []uint16{
 			tls.TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,
 			tls.TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305,
@@ -81,27 +76,4 @@ func InitTLSConfig() {
 			tls.TLS_CHACHA20_POLY1305_SHA256,
 		},
 	}
-}
-
-func generateCert() (cert tls.Certificate, err error) {
-	key, err := rsa.GenerateKey(rand.Reader, 2048)
-	if err != nil {
-		return
-	}
-	serialNumberLimit := new(big.Int).Lsh(big.NewInt(1), 128)
-	serialNumber, err := rand.Int(rand.Reader, serialNumberLimit)
-	if err != nil {
-		return
-	}
-
-	template := x509.Certificate{SerialNumber: serialNumber}
-	certDER, err := x509.CreateCertificate(rand.Reader, &template, &template, &key.PublicKey, key)
-	if err != nil {
-		return
-	}
-	keyPEM := pem.EncodeToMemory(&pem.Block{Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(key)})
-	certPEM := pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: certDER})
-
-	cert, err = tls.X509KeyPair(certPEM, keyPEM)
-	return
 }
