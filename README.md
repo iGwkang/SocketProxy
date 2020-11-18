@@ -1,5 +1,6 @@
 交互过程:
-
+	`windows: 本机应用通过 socks5 连接client`
+	`linux: 通过 iptables 转发到 client`
 - TCP:
     1. 客户端连接, 初始化加密方式
         1. 根据第一个字节判断 是'异或'还是'tls'
