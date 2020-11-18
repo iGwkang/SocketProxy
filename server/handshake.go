@@ -29,20 +29,17 @@ func Handshake(conn net.Conn) (newConn net.Conn, ip, port string, cipherType uin
 	// 密码验证
 	err = verifyClientPassword(newConn)
 	if err != nil {
-		newConn.Close()
 		return
 	}
 
 	// 目的地址
 	ip, port, err = getDestAddr(newConn)
 	if err != nil {
-		newConn.Close()
 		return
 	}
 
 	// 判断是否在内网
 	if common.IsIntranetAddress(ip) {
-		newConn.Close()
 		err = errors.New(ip + " is IntranetAddress")
 		return
 	}
