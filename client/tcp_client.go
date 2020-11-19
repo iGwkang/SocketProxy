@@ -116,7 +116,7 @@ func (c *TcpClient) Handshake(serConn net.Conn, destAddr []byte) (newConn net.Co
 		newConn, _ = common.NewXorCipher(xorByte, serConn)
 		cipherType = 0x00
 	case 1: // tls
-		tlsConn := tls.Client(serConn, TLSConfig[serConn.RemoteAddr().String()])
+		tlsConn := tls.Client(serConn, TLSConfig)
 		newConn = tlsConn
 		err = tlsConn.Handshake()
 		if err != nil {

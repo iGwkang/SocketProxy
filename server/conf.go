@@ -44,17 +44,15 @@ func LoadConfig() {
 }
 
 func InitTLSConfig() {
-	// 获取本机外网ip
-	myIP := common.GetExternalIP()
-	if myIP == nil {
-		Logger.Fatal("get external ip fatal")
-	}
-	Logger.Info("my external ip is ", myIP)
-	// 生成证书
-	cert, err := common.GenerateCert(myIP)
+	certPEM, keyPEM, err := common.GenerateCert()
 	if err != nil {
 		Logger.Fatal(err)
 	}
+	cert, err := tls.X509KeyPair(certPEM, keyPEM)
+	if err != nil {
+		Logger.Fatal(err)
+	}
+
 	TLSConfig = &tls.Config{
 		Certificates: []tls.Certificate{cert},
 		MinVersion:   tls.VersionTLS12,
