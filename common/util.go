@@ -42,7 +42,7 @@ func GetExternalIP() net.IP {
 	}
 	defer resp.Body.Close()
 
-	buf := make([]byte, 512)
+	buf := make([]byte, 32)
 
 	n, err := resp.Body.Read(buf)
 	if err != nil {
