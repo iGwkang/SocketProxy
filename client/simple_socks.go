@@ -78,8 +78,8 @@ func GetSocks5DestAddr(conn net.Conn) (addr []byte, err error) {
 }
 
 func ParseDomainIPv4(domain string) []byte {
-	if ip := net.ParseIP(domain); ip != nil {
-		return ip.To4()
+	if ip := net.ParseIP(domain).To4(); ip != nil {
+		return ip
 	}
 	m := dns.Msg{}
 	m.SetQuestion(dns.Fqdn(domain), dns.TypeA)
