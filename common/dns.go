@@ -5,6 +5,7 @@ import (
 	"time"
 )
 
+// dns请求
 func RequestDNSParse(dnsMsg []byte, dnsServer string, timeout time.Duration) (data []byte, err error) {
 	addr, err := net.ResolveUDPAddr("udp", dnsServer)
 	if err != nil {

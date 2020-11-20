@@ -10,6 +10,7 @@ import (
 	"time"
 )
 
+// 生成证书
 func GenerateCert() (certPEM, keyPEM []byte, err error) {
 	key, err := rsa.GenerateKey(rand.Reader, 2048)
 	if err != nil {

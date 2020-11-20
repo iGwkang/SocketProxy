@@ -11,6 +11,7 @@ import (
 
 const SO_ORIGINAL_DST = 80
 
+// 获取目标地址
 func GetSockDestAddr(conn net.Conn) (addr []byte, err error) {
 	var file *os.File
 	switch conn.(type) {

@@ -21,6 +21,7 @@ func GetNonZeroNumber() uint8 {
 	}
 }
 
+// 地址转为字符串
 func AddrToString(addr []byte) (ip, port string) {
 	if len(addr) != 6 {
 		return

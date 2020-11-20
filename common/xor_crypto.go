@@ -4,6 +4,7 @@ import (
 	"net"
 )
 
+// 异或加解密
 type xorCipher struct {
 	net.Conn
 	xorByte byte

@@ -12,6 +12,7 @@ var Logger *zap.SugaredLogger
 
 var logPath = flag.String("log", "", "Log Path")
 
+// 日志初始化
 func InitLogger() {
 	core := zapcore.NewCore(getEncoder(), getLogWriter(), zapcore.DebugLevel)
 	Logger = zap.New(core, zap.AddCaller()).Sugar()

@@ -24,7 +24,7 @@ func Handshake(conn net.Conn) (newConn net.Conn, ip, port string, cipherType uin
 	case 1:
 		newConn, cipherType, err = tlsHandshake(conn)
 	default:
-		err = errors.New("encryption type not supported")
+		err = errors.New("Encryption type not supported")
 	}
 	if err != nil {
 		return
@@ -83,7 +83,7 @@ func verifyClientPassword(conn net.Conn) (err error) {
 		return err
 	}
 	if string(passwd) != ServerConfig.Password {
-		return errors.New("password verification failed")
+		return errors.New("Password verification failed")
 	}
 	return
 }

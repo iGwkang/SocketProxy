@@ -54,7 +54,6 @@ func (c *TcpClient) Run() {
 			break
 		}
 		go c.TcpClientHandle(conn)
-
 	}
 	return
 }
@@ -130,6 +129,7 @@ func (c *TcpClient) Handshake(serConn net.Conn, destAddr []byte) (newConn net.Co
 		return
 	}
 
+	// 给服务器校验密码
 	_, err = newConn.Write([]byte(ClientConfig.Password))
 
 	sha := sha1.Sum([]byte(ClientConfig.Password))
@@ -138,7 +138,7 @@ func (c *TcpClient) Handshake(serConn net.Conn, destAddr []byte) (newConn net.Co
 	if err != nil {
 		return
 	}
-
+	// 校验服务器返回的密码
 	if !bytes.Equal(sha[:], buf) {
 		err = errors.New("Server Password Error")
 		return
