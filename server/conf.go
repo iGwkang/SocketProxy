@@ -8,6 +8,7 @@ import (
 	"flag"
 	"io/ioutil"
 	"time"
+	"crypto/sha1"
 )
 
 var configPath = flag.String("config", "config.json", "Config File Path.")
@@ -41,6 +42,9 @@ func LoadConfig() {
 	}
 	ServerConfig.Timeout *= time.Second
 	Logger.Infof("Server Config: %+v", ServerConfig)
+
+	passwd := sha1.Sum([]byte(ServerConfig.Password))
+	ServerConfig.Password = string(passwd[:])
 }
 
 func InitTLSConfig() {

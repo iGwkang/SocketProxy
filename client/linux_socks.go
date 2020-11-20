@@ -11,7 +11,7 @@ import (
 
 const SO_ORIGINAL_DST = 80
 
-func GetSockDestAddr(conn net.Conn) (addr []byte, err error)  {
+func GetSockDestAddr(conn net.Conn) (addr []byte, err error) {
 	var file *os.File
 	switch conn.(type) {
 	case *net.TCPConn:
@@ -26,7 +26,7 @@ func GetSockDestAddr(conn net.Conn) (addr []byte, err error)  {
 			return
 		}
 	default:
-		err = errors.New("conn not support.")
+		err = errors.New("Conn not support.")
 		return
 	}
 	defer file.Close()

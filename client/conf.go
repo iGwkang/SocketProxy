@@ -2,6 +2,7 @@ package main
 
 import (
 	. "SocketProxy/logger"
+	"crypto/sha1"
 	"crypto/tls"
 	"encoding/json"
 	"flag"
@@ -50,6 +51,8 @@ func LoadConfig() {
 	ClientConfig.Timeout *= time.Second
 	ClientConfig.ListenDNSPort = ClientConfig.ListenDNSAddr[strings.IndexByte(ClientConfig.ListenDNSAddr, ':')+1:]
 	Logger.Infof("Client Config: %+v", ClientConfig)
+	passwd := sha1.Sum([]byte(ClientConfig.Password))
+	ClientConfig.Password = string(passwd[:])
 }
 
 func InitTLSConfig() {

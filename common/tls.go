@@ -23,6 +23,7 @@ func GenerateCert() (certPEM, keyPEM []byte, err error) {
 
 	template := x509.Certificate{
 		SerialNumber: serialNumber,
+		DNSNames:     []string{"SocketProxy"},
 		NotBefore:    time.Now(),
 		NotAfter:     time.Now().AddDate(10, 0, 0),
 	}

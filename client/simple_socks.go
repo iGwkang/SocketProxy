@@ -21,7 +21,7 @@ func GetSockDestAddr(conn net.Conn) (addr []byte, err error) {
 	case 0x5:
 		return GetSocks5DestAddr(conn)
 	default:
-		err = errors.New("protocol not support")
+		err = errors.New("Protocol not support")
 	}
 	return
 }
@@ -29,7 +29,7 @@ func GetSockDestAddr(conn net.Conn) (addr []byte, err error) {
 // socks4
 func GetSocks4DestAddr(msg []byte, conn net.Conn) (addr []byte, err error) {
 	// TODO socks4
-	err = errors.New("socks4 protocol not support")
+	err = errors.New("Socks4 protocol not support")
 	return nil, err
 }
 
@@ -48,7 +48,7 @@ func GetSocks5DestAddr(conn net.Conn) (addr []byte, err error) {
 	}
 
 	if b[0] != 0x5 || b[1] != 0x01 { //CONNECT
-		err = errors.New("only support CONNECT")
+		err = errors.New("Only support CONNECT")
 		return
 	}
 

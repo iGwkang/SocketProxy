@@ -1,6 +1,7 @@
 package common
 
 import (
+	"crypto/sha1"
 	"net/http"
 	"strings"
 	"testing"
@@ -30,4 +31,11 @@ func TestIsIntranetAddress(t *testing.T) {
 		t.Fatal(err)
 	}
 	t.Log(string(buf[:n]))
+}
+
+func TestSha1Sum(t *testing.T) {
+	buf := sha1.Sum([]byte("test"))
+	str := string(buf[:])
+	t.Log(buf)
+	t.Log(len(str))
 }

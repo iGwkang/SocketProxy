@@ -3,8 +3,11 @@ package main
 import (
 	"SocketProxy/common"
 	. "SocketProxy/logger"
+	"bytes"
+	"crypto/sha1"
 	"crypto/tls"
 	"errors"
+	"io"
 	"net"
 )
 
@@ -27,7 +30,7 @@ func (c *TcpClient) getServerConn() (net.Conn, error) {
 			return conn, err
 		}
 	}
-	return nil, errors.New("server connection failed")
+	return nil, errors.New("Server connection failed")
 }
 
 func (c *TcpClient) Run() {
@@ -83,7 +86,7 @@ func (c *TcpClient) TcpClientHandle(conn net.Conn) {
 		if ClientConfig.Timeout != 0 {
 			serverConn.(*net.TCPConn).SetKeepAlivePeriod(ClientConfig.Timeout)
 		}
-		Logger.Debugf("start relay %s <--> %s", conn.RemoteAddr(), serverConn.RemoteAddr())
+		Logger.Debugf("Start relay %s <--> %s", conn.RemoteAddr(), serverConn.RemoteAddr())
 		common.Relay(serverConn, conn)
 	} else {
 		// 与服务器建立连接
@@ -101,7 +104,7 @@ func (c *TcpClient) TcpClientHandle(conn net.Conn) {
 			Logger.Warn(err)
 			return
 		}
-		Logger.Debugf("use cipherType: %#v, start relay %s <--> %s <--> %s", cipherType, conn.RemoteAddr(), serverConn.RemoteAddr(), ip+":"+port)
+		Logger.Debugf("Use cipherType: %#v, start relay %s <--> %s <--> %s", cipherType, conn.RemoteAddr(), serverConn.RemoteAddr(), ip+":"+port)
 		common.Relay(serverConn, conn)
 	}
 }
@@ -119,15 +122,28 @@ func (c *TcpClient) Handshake(serConn net.Conn, destAddr []byte) (newConn net.Co
 		tlsConn := tls.Client(serConn, TLSConfig)
 		newConn = tlsConn
 		err = tlsConn.Handshake()
-		if err != nil {
-			return
-		}
 		cipherType = tlsConn.ConnectionState().CipherSuite
 	default:
-		err = errors.New("encryption type not supported")
+		err = errors.New("Encryption type not supported")
+	}
+	if err != nil {
 		return
 	}
+
 	_, err = newConn.Write([]byte(ClientConfig.Password))
+
+	sha := sha1.Sum([]byte(ClientConfig.Password))
+	buf := make([]byte, len(sha))
+	_, err = io.ReadFull(newConn, buf)
+	if err != nil {
+		return
+	}
+
+	if !bytes.Equal(sha[:], buf) {
+		err = errors.New("Server Password Error")
+		return
+	}
+
 	_, err = newConn.Write(destAddr[:])
 	return
 }
