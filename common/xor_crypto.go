@@ -10,11 +10,11 @@ type xorCipher struct {
 	xorByte byte
 }
 
-func NewXorCipher(xorByte byte, conn net.Conn) (net.Conn, error) {
+func NewXorCipher(xorByte byte, conn net.Conn) net.Conn {
 	return &xorCipher{
 		Conn:    conn,
 		xorByte: xorByte,
-	}, nil
+	}
 }
 
 func (c *xorCipher) Read(outData []byte) (int, error) {

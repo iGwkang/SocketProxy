@@ -63,7 +63,7 @@ func xorHandshake(conn net.Conn) (newConn net.Conn, err error) {
 	if xorByte[0] == 0 {
 		return nil, errors.New("xorHandshake error, xorByte == 0")
 	}
-	newConn, _ = common.NewXorCipher(xorByte[0], conn)
+	newConn = common.NewXorCipher(xorByte[0], conn)
 	return
 }
 
