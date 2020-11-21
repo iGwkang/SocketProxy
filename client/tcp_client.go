@@ -1,7 +1,6 @@
 package main
 
 import (
-	"time"
 	"SocketProxy/common"
 	. "SocketProxy/logger"
 	"bytes"
@@ -10,6 +9,7 @@ import (
 	"errors"
 	"io"
 	"net"
+	"time"
 )
 
 type TcpClient struct {
@@ -98,14 +98,19 @@ func (c *TcpClient) TcpClientHandle(conn net.Conn) {
 		defer func() {
 			serverConn.Close()
 		}()
-		
-		serverConn.SetDeadline(time.Now().Add(ClientConfig.Timeout))
+
+		if ClientConfig.Timeout != 0 {
+			serverConn.SetDeadline(time.Now().Add(ClientConfig.Timeout))
+		}
+
 		serverConn, cipherType, err := c.Handshake(serverConn, addr)
 		if err != nil {
 			Logger.Warn(err)
 			return
 		}
-		serverConn.SetDeadline(time.Time{})
+		if ClientConfig.Timeout != 0 {
+			serverConn.SetDeadline(time.Time{})
+		}
 		Logger.Debugf("Use cipherType: %#v, start relay %s <--> %s <--> %s", cipherType, conn.RemoteAddr(), serverConn.RemoteAddr(), ip+":"+port)
 		common.Relay(serverConn, conn)
 	}

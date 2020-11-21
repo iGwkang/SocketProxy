@@ -3,12 +3,12 @@ package main
 import (
 	"SocketProxy/common"
 	. "SocketProxy/logger"
+	"crypto/sha1"
 	"crypto/tls"
 	"encoding/json"
 	"flag"
 	"io/ioutil"
 	"time"
-	"crypto/sha1"
 )
 
 var configPath = flag.String("config", "config.json", "Config File Path.")

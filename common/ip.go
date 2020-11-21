@@ -8,7 +8,7 @@ type IPRange struct {
 }
 
 // 内网地址范围
-var intranetAddr = []IPRange{
+var intranetAddr = [...]IPRange{
 	{Begin: Inet_addr_h("127.0.0.0"), End: Inet_addr_h("127.255.255.255")},
 	{Begin: Inet_addr_h("10.0.0.0"), End: Inet_addr_h("10.255.255.255")},
 	{Begin: Inet_addr_h("169.254.0.0"), End: Inet_addr_h("169.254.255.255")},
@@ -50,4 +50,3 @@ func IsIntranetAddress(ipv4 string) bool {
 
 	return false
 }
-
