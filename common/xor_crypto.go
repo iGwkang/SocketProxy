@@ -5,8 +5,6 @@ import (
 	"unsafe"
 )
 
-const uint64Size = int(unsafe.Sizeof(uint64(0)))
-
 // 异或加解密
 type xorCipher struct {
 	net.Conn
@@ -55,30 +53,40 @@ func SafeXORBytes(dst []byte, b byte) {
 }
 
 func FastXORByte(dst []byte, b byte) {
-	dw := *(*[]uint64)(unsafe.Pointer(&dst))
-	var uintB uint64
-	for i := 0; i < uint64Size; i++ {
-		*(*uint8)(unsafe.Pointer(uintptr(unsafe.Pointer(&uintB)) + uintptr(i))) = b
-	}
+	const uint64Size = 8
+
+	uint64Array := *(*[]uint64)(unsafe.Pointer(&dst))
+	bByte := uint64(b) +
+		uint64(b)<<(8*1) +
+		uint64(b)<<(8*2) +
+		uint64(b)<<(8*3) +
+		uint64(b)<<(8*4) +
+		uint64(b)<<(8*5) +
+		uint64(b)<<(8*6) +
+		uint64(b)<<(8*7)
+
+	// for i := 0; i < uint64Size; i++ {
+	// 	*(*uint8)(unsafe.Pointer(uintptr(unsafe.Pointer(&uintB)) + uintptr(i))) = b
+	// }
 
 	n := len(dst) / uint64Size
 
 	nx := n % 8
 	for i := 0; i < nx; i++ {
-		dw[i] ^= uintB
+		uint64Array[i] ^= bByte
 	}
 
 	for i := nx; i < n; i += 8 {
-		_dst := dw[i : i+8]
-		_dst[0] ^= uintB
-		_dst[1] ^= uintB
-		_dst[2] ^= uintB
-		_dst[3] ^= uintB
+		tmpArray := uint64Array[i : i+8]
+		tmpArray[0] ^= bByte
+		tmpArray[1] ^= bByte
+		tmpArray[2] ^= bByte
+		tmpArray[3] ^= bByte
 
-		_dst[4] ^= uintB
-		_dst[5] ^= uintB
-		_dst[6] ^= uintB
-		_dst[7] ^= uintB
+		tmpArray[4] ^= bByte
+		tmpArray[5] ^= bByte
+		tmpArray[6] ^= bByte
+		tmpArray[7] ^= bByte
 	}
 
 	ex := len(dst) % 8
