@@ -1,20 +1,14 @@
-交互过程:
-	`windows: 本机应用通过 socks5 连接client`
-	`linux: 通过 iptables 转发到 client`
-- TCP:
-    1. 客户端连接, 初始化加密方式
-        1. 根据第一个字节判断 是'异或'还是'tls'
-		2. 如果第一个字节是0: 异或加密数据, 客户端需要生成一个[1~255]的数字,告诉服务器异或加密的规则
-		3. 如果是 非0: tls 加密
-    2. 连接初始化完成, 验证密码  (客户端先发送密码, 服务器校验完成之后, 再返回给客户端一个新的密码, 然后客户端再校验是否是需要连接的服务器)
-    3. 获取需要代理的地址, 客户端需要告诉服务器目的地址是哪里 ip+port, 前4个字节是ipv4地址,后两个字节是端口(端口使用大端)
-    4. 握手完成之后 透传数据
+## 本地Socket代理
 
-- DNS:
-    1. 判断域名是否需要走代理
-		1. 不需要走代理: 直接给国内dns发送dns请求(default: 223.5.5.5:53)
-		2. 需要走代理: 客户端发起请求的时候,用的是异或加密
-          xorByte + DNSRequest(异或之后的数据)
-          1 byte + DNSRequest Length
-    2. 如果走了代理, 服务端接收到之后 根据第一个字节, 异或解密数据, 然后发送给 8.8.8.8:53 解析dns请求
-        拿到 8.8.8.8 回复的消息, 再通过 异或加密数据 转发给客户端
+### 执行流程
+![process.svg](https://github.com/iGwkang/SocketProxy/raw/master/resource/process.svg)
+
+### 配置文件
+
+- 客户端
+
+![clientConf.png](https://github.com/iGwkang/SocketProxy/raw/master/resource/clientConf.png)
+
+- 服务端
+
+![clientConf.png](https://github.com/iGwkang/SocketProxy/raw/master/resource/serverConf.png)
