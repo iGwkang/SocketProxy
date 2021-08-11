@@ -17,10 +17,13 @@ func RequestDNSParse(dnsMsg []byte, dnsServer string, timeout time.Duration) (da
 		return
 	}
 	defer conn.Close()
-	//err = conn.SetDeadline(time.Now().Add(timeout))
-	//if err != nil {
-	//	return
-	//}
+	if timeout > 0 {
+		err = conn.SetDeadline(time.Now().Add(timeout))
+		if err != nil {
+			return
+		}
+	}
+
 	_, err = conn.Write(dnsMsg)
 	if err != nil {
 		return

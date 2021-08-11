@@ -12,7 +12,7 @@ var whiteIPRange []common.IPRange
 
 // 初始化白名单列表
 func InitWhiteIPList() error {
-	file, err := os.Open(ClientConfig.IPWhiteFile)
+	file, err := os.Open(conf.IPWhiteFile)
 	if err != nil {
 		Logger.Warn(err)
 		return err
@@ -25,8 +25,8 @@ func InitWhiteIPList() error {
 		split := strings.Split(scanner.Text(), "-")
 		if len(split) == 2 {
 			whiteIPRange = append(whiteIPRange, common.IPRange{
-				Begin: common.Inet_addr_h(split[0]),
-				End:   common.Inet_addr_h(split[1]),
+				Begin: common.Inet_addr(split[0]),
+				End:   common.Inet_addr(split[1]),
 			})
 		}
 	}
@@ -43,7 +43,7 @@ func IPisProxy(ip string) bool {
 		return false
 	}
 
-	ipUint := common.Inet_addr_h(ip)
+	ipUint := common.Inet_addr(ip)
 	if ipUint == 0 {
 		return false
 	}

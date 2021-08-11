@@ -23,7 +23,7 @@ var domainCache = cache.New(1*time.Hour, 0)
 
 func InitDomainList() (err error) {
 	var reader io.ReadCloser
-	reader, err = os.Open(ClientConfig.DomainFile)
+	reader, err = os.Open(conf.DomainFile)
 	if err != nil {
 		// 如果没有文件 直接访问github获取
 		var resp *http.Response

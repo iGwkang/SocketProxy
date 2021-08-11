@@ -3,8 +3,11 @@ package main
 import (
 	"SocketProxy/common"
 	. "SocketProxy/logger"
+	"errors"
+	"github.com/patrickmn/go-cache"
 	"net"
 	"sync"
+	"time"
 
 	"github.com/miekg/dns"
 )
@@ -14,10 +17,14 @@ type DNSClient struct {
 	listener   *net.UDPConn
 	bytePool   sync.Pool
 	dnsMsgPool sync.Pool
+	dnsServer  string
+	timeout    time.Duration
 }
 
-func NewDNSClient() *DNSClient {
-	laddr, err := net.ResolveUDPAddr("udp", ClientConfig.ListenDNSAddr)
+var lookupCache = cache.New(1*time.Hour, 10 * time.Minute)
+
+func NewDNSClient(addr, dnsServer string, timeout time.Duration) *DNSClient {
+	laddr, err := net.ResolveUDPAddr("udp", addr)
 	if err != nil {
 		Logger.Error(err)
 		return nil
@@ -35,6 +42,8 @@ func NewDNSClient() *DNSClient {
 				return &dns.Msg{}
 			},
 		},
+		dnsServer: dnsServer,
+		timeout:   timeout,
 	}
 }
 
@@ -79,39 +88,78 @@ func (s *DNSClient) handleDNS(buf []byte, cliAddr *net.UDPAddr) {
 	domain := dnsMsg.Question[0].Name
 	domain = domain[:len(domain)-1]
 
-	var sendData []byte
+	// var sendData []byte
 
 	// 判断域名是否在黑名单
-	if DomainIsProxy(domain) {
-		xorByte := common.GetNonZeroNumber()
-		for i := 0; i < len(buf); i++ {
-			buf[i] ^= xorByte
-		}
-		sendData = []byte{xorByte}
-		sendData = append(sendData, buf...)
+	//if DomainIsProxy(domain) {
+	sendData := make([]byte, len(buf)+1)
 
-		sendData, err = common.RequestDNSParse(sendData, ClientConfig.DNSServer, ClientConfig.Timeout)
-		if err != nil {
-			Logger.Error(err)
-			return
-		}
-
-		for i := 0; i < len(sendData); i++ {
-			sendData[i] ^= xorByte
-		}
-
-	} else {
-		data, err := common.RequestDNSParse(buf, ClientConfig.CNDNSServer, ClientConfig.Timeout)
-		if err != nil {
-			Logger.Error(err)
-			return
-		}
-		sendData = data
+	Logger.Debug(domain, " is proxy")
+	xorByte := common.GetNonZeroNumber()
+	for i := 0; i < len(buf); i++ {
+		buf[i] ^= xorByte
 	}
+	sendData[0] = xorByte
+	copy(sendData[1:], buf)
+
+	sendData, err = common.RequestDNSParse(sendData, s.dnsServer, s.timeout)
+	if err != nil {
+		Logger.Error(err)
+		return
+	}
+
+	for i := 0; i < len(sendData); i++ {
+		sendData[i] ^= xorByte
+	}
+
+	// } else {
+	// 	Logger.Debug(domain, " not proxy")
+	// 	data, err := common.RequestDNSParse(buf, conf.CNDNSServer, conf.Timeout)
+	// 	if err != nil {
+	// 		Logger.Error(err)
+	// 		return
+	// 	}
+	// 	sendData = data
+	// }
 
 	_, err = s.listener.WriteToUDP(sendData, cliAddr)
 	if err != nil {
 		Logger.Error(err)
 		return
+	}
+}
+
+func ParseDomain(domain string) (string, error) {
+
+	if ip, ok := lookupCache.Get(domain); ok {
+		return ip.(string), nil
+	}
+
+	if ip := net.ParseIP(domain).To4(); ip != nil {
+		return ip.String(), nil
+	}
+
+	if DomainIsProxy(domain) {
+		m := dns.Msg{}
+		m.SetQuestion(dns.Fqdn(domain), dns.TypeA)
+
+		in, err := dns.Exchange(&m, "127.0.0.1:"+conf.ListenDNSPort)
+		if err != nil {
+			return "", err
+		}
+		for _, ans := range in.Answer {
+			if a, ok := ans.(*dns.A); ok {
+				ip := a.A.To4().String()
+				lookupCache.Set(domain, ip, 0)
+				return ip, nil
+			}
+		}
+		return "", errors.New("parse domain " + domain + " failure")
+	} else {
+		host, err := net.LookupHost(domain)
+		if err != nil {
+			return "", err
+		}
+		return host[0], nil
 	}
 }
