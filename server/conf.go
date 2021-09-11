@@ -14,7 +14,7 @@ import (
 var configPath = flag.String("config", "config.json", "Config File Path.")
 
 // 服务端配置
-var ServerConfig = struct {
+var conf = struct {
 	ListenTcpAddrs []string      `json:"listen_tcp_addrs"` // 监听地址 (一个服务器可能有多个ip地址)
 	ListenDNSAddr  string        `json:"listen_dns_addr"`  // dns监听地址
 	DNSServer      string        `json:"dns_server"`       // dns服务器地址 (8.8.8.8:53)
@@ -36,15 +36,19 @@ func LoadConfig() {
 		Logger.Warn(err)
 	}
 
-	err = json.Unmarshal(data, &ServerConfig)
+	err = json.Unmarshal(data, &conf)
 	if err != nil {
 		Logger.Warn(err)
 	}
-	ServerConfig.Timeout *= time.Second
-	Logger.Infof("Server Config: %+v", ServerConfig)
+	conf.Timeout *= time.Second
+	if conf.Timeout == 0 {
+		conf.Timeout = 30 * time.Second
+	}
 
-	passwd := sha1.Sum([]byte(ServerConfig.Password))
-	ServerConfig.Password = string(passwd[:])
+	Logger.Infof("Server Config: %+v", conf)
+
+	passwd := sha1.Sum([]byte(conf.Password))
+	conf.Password = string(passwd[:])
 }
 
 func InitTLSConfig() {

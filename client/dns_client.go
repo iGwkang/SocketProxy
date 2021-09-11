@@ -21,7 +21,7 @@ type DNSClient struct {
 	timeout    time.Duration
 }
 
-var lookupCache = cache.New(1*time.Hour, 10 * time.Minute)
+var lookupCache = cache.New(1*time.Hour, 10*time.Minute)
 
 func NewDNSClient(addr, dnsServer string, timeout time.Duration) *DNSClient {
 	laddr, err := net.ResolveUDPAddr("udp", addr)
@@ -88,39 +88,39 @@ func (s *DNSClient) handleDNS(buf []byte, cliAddr *net.UDPAddr) {
 	domain := dnsMsg.Question[0].Name
 	domain = domain[:len(domain)-1]
 
-	// var sendData []byte
+	var sendData []byte
 
 	// 判断域名是否在黑名单
-	//if DomainIsProxy(domain) {
-	sendData := make([]byte, len(buf)+1)
+	if DomainIsProxy(domain) {
+		sendData = make([]byte, len(buf)+1)
 
-	Logger.Debug(domain, " is proxy")
-	xorByte := common.GetNonZeroNumber()
-	for i := 0; i < len(buf); i++ {
-		buf[i] ^= xorByte
+		Logger.Debug(domain, " is proxy")
+		xorByte := common.GetNonZeroNumber()
+		for i := 0; i < len(buf); i++ {
+			buf[i] ^= xorByte
+		}
+		sendData[0] = xorByte
+		copy(sendData[1:], buf)
+
+		sendData, err = common.RequestDNSParse(sendData, s.dnsServer, s.timeout)
+		if err != nil {
+			Logger.Error(err)
+			return
+		}
+
+		for i := 0; i < len(sendData); i++ {
+			sendData[i] ^= xorByte
+		}
+
+	} else {
+		Logger.Debug(domain, " not proxy")
+		data, err := common.RequestDNSParse(buf, "114.114.114.114:53", conf.Timeout)
+		if err != nil {
+			Logger.Error(err)
+			return
+		}
+		sendData = data
 	}
-	sendData[0] = xorByte
-	copy(sendData[1:], buf)
-
-	sendData, err = common.RequestDNSParse(sendData, s.dnsServer, s.timeout)
-	if err != nil {
-		Logger.Error(err)
-		return
-	}
-
-	for i := 0; i < len(sendData); i++ {
-		sendData[i] ^= xorByte
-	}
-
-	// } else {
-	// 	Logger.Debug(domain, " not proxy")
-	// 	data, err := common.RequestDNSParse(buf, conf.CNDNSServer, conf.Timeout)
-	// 	if err != nil {
-	// 		Logger.Error(err)
-	// 		return
-	// 	}
-	// 	sendData = data
-	// }
 
 	_, err = s.listener.WriteToUDP(sendData, cliAddr)
 	if err != nil {

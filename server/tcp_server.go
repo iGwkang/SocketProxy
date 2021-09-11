@@ -14,7 +14,7 @@ type TcpServer struct {
 
 func NewTcpServer() *TcpServer {
 	return &TcpServer{
-		listenAddrs: ServerConfig.ListenTcpAddrs,
+		listenAddrs: conf.ListenTcpAddrs,
 	}
 }
 
@@ -53,9 +53,9 @@ func TcpServerListenAddr(addr string) error {
 }
 
 func TcpServerHandle(conn net.Conn) {
-	if ServerConfig.Timeout != 0 {
-		_ = conn.(*net.TCPConn).SetKeepAlivePeriod(ServerConfig.Timeout)
-		conn.SetDeadline(time.Now().Add(ServerConfig.Timeout))
+	if conf.Timeout != 0 {
+		_ = conn.(*net.TCPConn).SetKeepAlivePeriod(conf.Timeout)
+		conn.SetDeadline(time.Now().Add(conf.Timeout))
 	}
 
 	newConn, ip, port, cipherType, err := Handshake(conn)
@@ -66,19 +66,19 @@ func TcpServerHandle(conn net.Conn) {
 	}
 	defer newConn.Close()
 
-	if ServerConfig.Timeout != 0 {
+	if conf.Timeout != 0 {
 		conn.SetDeadline(time.Time{})
 	}
 
 	// 访问目标地址
-	dstConn, err := net.DialTimeout("tcp", ip+":"+port, ServerConfig.Timeout)
+	dstConn, err := net.DialTimeout("tcp", ip+":"+port, conf.Timeout)
 	if err != nil {
 		Logger.Error(err)
 		return
 	}
 	defer dstConn.Close()
-	if ServerConfig.Timeout != 0 {
-		_ = dstConn.(*net.TCPConn).SetKeepAlivePeriod(ServerConfig.Timeout)
+	if conf.Timeout != 0 {
+		_ = dstConn.(*net.TCPConn).SetKeepAlivePeriod(conf.Timeout)
 	}
 	Logger.Debugf("Use cipherType: %#v, start relay %s <--> %s", cipherType, newConn.RemoteAddr(), dstConn.RemoteAddr())
 	common.Relay(dstConn, newConn)

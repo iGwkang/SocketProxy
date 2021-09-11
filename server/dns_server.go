@@ -14,7 +14,7 @@ type DNSServer struct {
 }
 
 func NewDNSServer() *DNSServer {
-	laddr, err := net.ResolveUDPAddr("udp", ServerConfig.ListenDNSAddr)
+	laddr, err := net.ResolveUDPAddr("udp", conf.ListenDNSAddr)
 	if err != nil {
 		Logger.Error(err)
 		return nil
@@ -66,7 +66,7 @@ func (s *DNSServer) handleDNS(buf []byte, cliAddr *net.UDPAddr) {
 		buf[i] ^= buf[0]
 	}
 
-	data, err := common.RequestDNSParse(buf[1:], ServerConfig.DNSServer, ServerConfig.Timeout)
+	data, err := common.RequestDNSParse(buf[1:], conf.DNSServer, conf.Timeout)
 	if err != nil {
 		Logger.Error(err)
 		return

@@ -51,6 +51,10 @@ func LoadConfig() {
 		Logger.Warn(err)
 	}
 	conf.Timeout *= time.Second
+	if conf.Timeout == 0 {
+		conf.Timeout = 30 * time.Second
+	}
+
 	conf.ListenDNSPort = conf.ListenDNSAddr[strings.IndexByte(conf.ListenDNSAddr, ':')+1:]
 	Logger.Infof("Client Config: %+v", conf)
 	passwd := sha1.Sum([]byte(conf.Password))
