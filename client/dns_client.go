@@ -34,7 +34,7 @@ func NewDNSClient(addr, dnsServer string, timeout time.Duration) *DNSClient {
 		listenAddr: laddr,
 		bytePool: sync.Pool{
 			New: func() interface{} {
-				return make([]byte, 1024)
+				return make([]byte, 512)
 			},
 		},
 		dnsMsgPool: sync.Pool{
@@ -114,12 +114,32 @@ func (s *DNSClient) handleDNS(buf []byte, cliAddr *net.UDPAddr) {
 
 	} else {
 		Logger.Debug(domain, " not proxy")
-		data, err := common.RequestDNSParse(buf, "114.114.114.114:53", conf.Timeout)
+		sendData, err = common.RequestDNSParse(buf, conf.ChinaDNSServer+":53", conf.Timeout)
 		if err != nil {
 			Logger.Error(err)
 			return
 		}
-		sendData = data
+
+		/*
+		err = dnsMsg.Unpack(data)
+		if err != nil {
+			Logger.Error(err)
+			return
+		}
+
+		for i := 0; i < len(dnsMsg.Answer); {
+			if _, ok := dnsMsg.Answer[i].(*dns.AAAA); ok {
+				dnsMsg.Answer = append(dnsMsg.Answer[:i], dnsMsg.Answer[i+1:]...)
+			} else {
+				i++
+			}
+		}
+		sendData, err = dnsMsg.PackBuffer(data)
+		if err != nil {
+			Logger.Error(err)
+			return
+		}
+		 */
 	}
 
 	_, err = s.listener.WriteToUDP(sendData, cliAddr)

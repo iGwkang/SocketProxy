@@ -22,6 +22,7 @@ var conf = struct {
 	ListenDNSPort    string
 	//ListenUDPAddr  string   `json:"listen_udp_addr"` // TODO: 本地udp监听地址
 	TcpServerAddrs []string      `json:"tcp_servers"`   // tcp服务器地址
+	ChinaDNSServer string        `json:"china_dns"`     // china dns服务器地址 (114.114.114.114)
 	DNSServer      string        `json:"dns_server"`    // vps dns服务器地址 (12.12.12.12:25353)
 	Timeout        time.Duration `json:"timeout"`       // 超时时间
 	Password       string        `json:"password"`      // 密码
@@ -33,6 +34,7 @@ var conf = struct {
 	ListenHttpAddr:   "0.0.0.0:1081",
 	ListenSocks5Addr: "0.0.0.0:1082",
 	ListenDNSAddr:    "0.0.0.0:25353",
+	ChinaDNSServer:   "223.5.5.5",
 	Timeout:          0,
 	Encryption:       0,
 	Password:         "SocketProxy",

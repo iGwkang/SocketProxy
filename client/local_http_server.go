@@ -14,23 +14,21 @@ import (
 type LocalHttpServer struct {
 	listenAddr  string
 	serverAddrs []string
-	encType     uint8
 	password    string
 	timeout     time.Duration
 }
 
-func NewLocalHttpServer(localAddr string, servers []string, encType uint8, passwd string, timeout time.Duration) *LocalHttpServer {
+func NewLocalHttpServer(localAddr string, servers []string, passwd string, timeout time.Duration) *LocalHttpServer {
 	return &LocalHttpServer{
 		listenAddr:  localAddr,
 		serverAddrs: servers,
-		encType:     encType,
 		password:    passwd,
 		timeout:     timeout,
 	}
 }
 func (c *LocalHttpServer) getServerConn(remoteAddr string) (net.Conn, error) {
 	for i := 0; i < len(c.serverAddrs); i++ {
-		conn, err := DialServer(c.serverAddrs[i], remoteAddr, c.password, c.encType)
+		conn, err := DialServer(c.serverAddrs[i], remoteAddr, c.password)
 		if err == nil {
 			return conn, nil
 		}

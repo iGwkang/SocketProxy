@@ -18,13 +18,11 @@ func Handshake(conn net.Conn) (newConn net.Conn, ip, port string, cipherType uin
 	}
 
 	// 加密类型
-	switch buf[0] {
+	switch buf[0] % 2 {
 	case 0:
 		newConn, err = xorHandshake(conn)
 	case 1:
 		newConn, cipherType, err = tlsHandshake(conn)
-	default:
-		err = errors.New("Encryption type not supported")
 	}
 	if err != nil {
 		return

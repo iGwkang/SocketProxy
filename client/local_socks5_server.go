@@ -13,16 +13,14 @@ import (
 type LocalSocks5Server struct {
 	listenAddr  string
 	serverAddrs []string
-	encType     uint8
 	password    string
 	timeout     time.Duration
 }
 
-func NewLocalSocks5Server(localAddr string, servers []string, encType uint8, passwd string, timeout time.Duration) *LocalSocks5Server {
+func NewLocalSocks5Server(localAddr string, servers []string, passwd string, timeout time.Duration) *LocalSocks5Server {
 	return &LocalSocks5Server{
 		listenAddr:  localAddr,
 		serverAddrs: servers,
-		encType:     encType,
 		password:    passwd,
 		timeout:     timeout,
 	}
@@ -30,7 +28,7 @@ func NewLocalSocks5Server(localAddr string, servers []string, encType uint8, pas
 
 func (c *LocalSocks5Server) getServerConn(remoteAddr string) (net.Conn, error) {
 	for i := 0; i < len(c.serverAddrs); i++ {
-		conn, err := DialServer(c.serverAddrs[i], remoteAddr, c.password, c.encType)
+		conn, err := DialServer(c.serverAddrs[i], remoteAddr, c.password)
 		if err == nil {
 			return conn, nil
 		}
