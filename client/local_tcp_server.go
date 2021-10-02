@@ -15,22 +15,24 @@ import (
 type LocalTCPServer struct {
 	listenAddr  string
 	serverAddrs []string
+	encType     uint8
 	password    string
 	timeout     time.Duration
 }
 
-func NewLocalTCPServer(localAddr string, servers []string, passwd string, timeout time.Duration) *LocalTCPServer {
+func NewLocalTCPServer(localAddr string, servers []string, encType uint8, passwd string, timeout time.Duration) *LocalTCPServer {
 	return &LocalTCPServer{
 		listenAddr:  localAddr,
 		serverAddrs: servers,
+		encType:     encType,
 		password:    passwd,
 		timeout:     timeout,
 	}
 }
 
-func (c *LocalTCPServer) getServerConn(remoteAddr string) (net.Conn, error) {
-	for i := 0; i < len(c.serverAddrs); i++ {
-		conn, err := DialServer(c.serverAddrs[i], remoteAddr, c.password)
+func (lts *LocalTCPServer) getServerConn(remoteAddr string) (net.Conn, error) {
+	for i := 0; i < len(lts.serverAddrs); i++ {
+		conn, err := DialServer(lts.serverAddrs[i], remoteAddr, lts.password, lts.encType)
 		if err == nil {
 			return conn, nil
 		}
@@ -38,17 +40,20 @@ func (c *LocalTCPServer) getServerConn(remoteAddr string) (net.Conn, error) {
 	return nil, errors.New("server connection failed")
 }
 
-func (c *LocalTCPServer) Run() {
-	if len(c.serverAddrs) == 0 {
+func (lts *LocalTCPServer) Run() {
+	if len(lts.serverAddrs) == 0 {
 		Logger.Error("TcpServer number = 0")
 		return
 	}
 
-	listener, err := net.Listen("tcp", c.listenAddr)
+	listener, err := net.Listen("tcp", lts.listenAddr)
 	if err != nil {
 		Logger.Error(err)
 		return
 	}
+
+	Logger.Info("start listen local tcp server ", lts.listenAddr)
+
 	defer listener.Close()
 
 	for {
@@ -58,16 +63,16 @@ func (c *LocalTCPServer) Run() {
 			Logger.Error(err)
 			break
 		}
-		go c.TcpClientHandle(conn)
+		go lts.TcpClientHandle(conn)
 	}
 	return
 }
 
-func (c *LocalTCPServer) TcpClientHandle(conn net.Conn) {
+func (lts *LocalTCPServer) TcpClientHandle(conn net.Conn) {
 	defer conn.Close()
 
-	if c.timeout != 0 {
-		conn.(*net.TCPConn).SetKeepAlivePeriod(c.timeout)
+	if lts.timeout != 0 {
+		conn.(*net.TCPConn).SetKeepAlivePeriod(lts.timeout)
 	}
 
 	// 获取目标地址
@@ -80,21 +85,21 @@ func (c *LocalTCPServer) TcpClientHandle(conn net.Conn) {
 	ip, port := common.AddrToString(addr)
 
 	if !IPisProxy(ip) {
-		serverConn, err := net.DialTimeout("tcp", ip+":"+port, c.timeout)
+		serverConn, err := net.DialTimeout("tcp", ip+":"+port, lts.timeout)
 		if err != nil {
 			Logger.Warn(err)
 			return
 		}
 		defer serverConn.Close()
 
-		if c.timeout != 0 {
-			serverConn.(*net.TCPConn).SetKeepAlivePeriod(c.timeout)
+		if lts.timeout != 0 {
+			serverConn.(*net.TCPConn).SetKeepAlivePeriod(lts.timeout)
 		}
 		Logger.Debugf("Start relay %s <--> %s", conn.RemoteAddr(), serverConn.RemoteAddr())
 		common.Relay(serverConn, conn)
 	} else {
 		// 与服务器建立连接
-		serverConn, err := c.getServerConn(ip + ":" + port)
+		serverConn, err := lts.getServerConn(ip + ":" + port)
 		if err != nil {
 			Logger.Warn(err)
 			return

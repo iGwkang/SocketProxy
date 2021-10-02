@@ -8,7 +8,6 @@ import (
 	"encoding/binary"
 	"errors"
 	"io"
-	"math/rand"
 	"net"
 	"strconv"
 )
@@ -20,15 +19,14 @@ type serverConnect struct {
 	remoteAddr string
 }
 
-func DialServer(addr, remoteAddr, passwd string) (c net.Conn, err error) {
-
+func DialServer(addr, remoteAddr, passwd string, encType uint8) (c net.Conn, err error) {
 	conn, err := net.Dial("tcp", addr)
 	if err != nil {
 		return nil, err
 	}
 	serverConn := &serverConnect{
 		Conn:       conn,
-		encType:    uint8(rand.Uint32() % 256),
+		encType:    encType,
 		password:   passwd,
 		remoteAddr: remoteAddr,
 	}
@@ -41,13 +39,12 @@ func DialServer(addr, remoteAddr, passwd string) (c net.Conn, err error) {
 }
 
 func (c *serverConnect) handshake() (err error) {
-
 	_, err = c.Write([]byte{c.encType})
 	if err != nil {
 		return
 	}
 
-	switch c.encType % 2 {
+	switch c.encType {
 	case 0: // 异或
 		xorByte := common.GetNonZeroNumber()
 		_, err = c.Write([]byte{xorByte})
@@ -56,6 +53,8 @@ func (c *serverConnect) handshake() (err error) {
 		tlsConn := tls.Client(c.Conn, TLSConfig)
 		err = tlsConn.Handshake()
 		c.Conn = tlsConn
+	default:
+		err = errors.New("Encryption type not supported")
 	}
 	if err != nil {
 		return

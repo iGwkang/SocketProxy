@@ -14,21 +14,23 @@ import (
 type LocalHttpServer struct {
 	listenAddr  string
 	serverAddrs []string
+	encType     uint8
 	password    string
 	timeout     time.Duration
 }
 
-func NewLocalHttpServer(localAddr string, servers []string, passwd string, timeout time.Duration) *LocalHttpServer {
+func NewLocalHttpServer(localAddr string, servers []string, encType uint8, passwd string, timeout time.Duration) *LocalHttpServer {
 	return &LocalHttpServer{
 		listenAddr:  localAddr,
 		serverAddrs: servers,
+		encType:     encType,
 		password:    passwd,
 		timeout:     timeout,
 	}
 }
-func (c *LocalHttpServer) getServerConn(remoteAddr string) (net.Conn, error) {
-	for i := 0; i < len(c.serverAddrs); i++ {
-		conn, err := DialServer(c.serverAddrs[i], remoteAddr, c.password)
+func (lhs *LocalHttpServer) getServerConn(remoteAddr string) (net.Conn, error) {
+	for i := 0; i < len(lhs.serverAddrs); i++ {
+		conn, err := DialServer(lhs.serverAddrs[i], remoteAddr, lhs.password, lhs.encType)
 		if err == nil {
 			return conn, nil
 		}
@@ -36,9 +38,9 @@ func (c *LocalHttpServer) getServerConn(remoteAddr string) (net.Conn, error) {
 	return nil, errors.New("server connection failed")
 }
 
-func (s *LocalHttpServer) Run() {
-	Logger.Info("start listen local http server ", s.listenAddr)
-	err := http.ListenAndServe(s.listenAddr, http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+func (lhs *LocalHttpServer) Run() {
+	Logger.Info("start listen local http server ", lhs.listenAddr)
+	err := http.ListenAndServe(lhs.listenAddr, http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		if req.Method == "GET" {
 			newReq, err := http.NewRequest(req.Method, req.URL.String(), req.Body)
 			if err != nil {
@@ -71,7 +73,7 @@ func (s *LocalHttpServer) Run() {
 			if !IPisProxy(ip) {
 				conn, err = net.Dial("tcp", ip + ":" + port)
 			} else {
-				conn, err = s.getServerConn(ip + ":" + port)
+				conn, err = lhs.getServerConn(ip + ":" + port)
 			}
 			if err != nil {
 				w.WriteHeader(http.StatusRequestTimeout)
@@ -120,7 +122,7 @@ func (s *LocalHttpServer) Run() {
 			if !IPisProxy(ip) {
 				conn, err = net.Dial("tcp", ip + ":" + port)
 			} else {
-				conn, err = s.getServerConn(ip + ":" + port)
+				conn, err = lhs.getServerConn(ip + ":" + port)
 			}
 			if err != nil {
 				w.WriteHeader(http.StatusRequestTimeout)
@@ -164,7 +166,6 @@ func (s *LocalHttpServer) Run() {
 			w.WriteHeader(http.StatusBadGateway)
 		}
 	}))
-
 	if err != nil {
 		Logger.Fatal(err)
 	}
