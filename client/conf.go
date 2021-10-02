@@ -41,6 +41,7 @@ var conf = struct {
 }
 
 var TLSConfig *tls.Config
+var globalProxy = flag.Bool("g", false, "enable global proxy")
 
 func LoadConfig() {
 	data, err := ioutil.ReadFile(*configPath)

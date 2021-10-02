@@ -39,6 +39,10 @@ func InitWhiteIPList() error {
 
 // 判断ip是否在白名单
 func IPisProxy(ip string) bool {
+	if *globalProxy {
+		return true
+	}
+
 	if common.IsIntranetAddress(ip) {
 		return false
 	}

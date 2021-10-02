@@ -5,6 +5,7 @@ import (
 	"io"
 	"net"
 	"time"
+	"unsafe"
 )
 
 // 获取非零数
@@ -16,6 +17,20 @@ func GetNonZeroNumber() uint8 {
 			return n[0]
 		}
 	}
+}
+// StringToBytes converts string to byte slice without a memory allocation.
+func StringToBytes(s string) []byte {
+	return *(*[]byte)(unsafe.Pointer(
+		&struct {
+			Data string
+			Cap  int
+		}{s, len(s)},
+	))
+}
+
+// BytesToString converts byte slice to string without a memory allocation.
+func BytesToString(b []byte) string {
+	return *(*string)(unsafe.Pointer(&b))
 }
 
 // 交换两个连接的数据

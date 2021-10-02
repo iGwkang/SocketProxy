@@ -2,12 +2,9 @@ package main
 
 import (
 	"SocketProxy/common"
-	"bytes"
-	"crypto/sha1"
 	"crypto/tls"
 	"encoding/binary"
 	"errors"
-	"io"
 	"net"
 	"strconv"
 )
@@ -62,16 +59,7 @@ func (c *serverConnect) handshake() (err error) {
 
 	// 给服务器校验密码
 	_, err = c.Write([]byte(c.password))
-
-	sha := sha1.Sum([]byte(c.password))
-	buf := make([]byte, len(sha))
-	_, err = io.ReadFull(c, buf)
 	if err != nil {
-		return
-	}
-	// 校验服务器返回的密码
-	if !bytes.Equal(sha[:], buf) {
-		err = errors.New("Server Password Error")
 		return
 	}
 

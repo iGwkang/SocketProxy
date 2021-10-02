@@ -67,6 +67,10 @@ func InitDomainList() (err error) {
 }
 
 func DomainIsProxy(domain string) bool {
+	if *globalProxy {
+		return true
+	}
+
 	// 先判断缓存里有没有
 	item, ok := domainCache.Get(domain)
 	if ok {

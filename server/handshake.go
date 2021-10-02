@@ -2,7 +2,6 @@ package main
 
 import (
 	"SocketProxy/common"
-	"crypto/sha1"
 	"crypto/tls"
 	"errors"
 	"io"
@@ -34,8 +33,8 @@ func Handshake(conn net.Conn) (newConn net.Conn, ip, port string, cipherType uin
 	}
 
 	// 给客户端回哈希之后的密码
-	sha := sha1.Sum([]byte(conf.Password))
-	newConn.Write(sha[:])
+	// sha := sha1.Sum([]byte(conf.Password))
+	// newConn.Write(sha[:])
 
 	// 目的地址
 	ip, port, err = getDestAddr(newConn)
@@ -80,7 +79,7 @@ func verifyClientPassword(conn net.Conn) (err error) {
 	if err != nil {
 		return err
 	}
-	if string(passwd) != conf.Password {
+	if common.BytesToString(passwd) != conf.Password {
 		return errors.New("Password verification failed")
 	}
 	return

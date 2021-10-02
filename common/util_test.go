@@ -39,3 +39,10 @@ func TestSha1Sum(t *testing.T) {
 	t.Log(buf)
 	t.Log(len(str))
 }
+
+func TestStringToBytes(t *testing.T) {
+	str := "abcdefg"
+
+	t.Log(StringToBytes(str))
+
+}
