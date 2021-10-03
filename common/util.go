@@ -18,6 +18,7 @@ func GetNonZeroNumber() uint8 {
 		}
 	}
 }
+
 // StringToBytes converts string to byte slice without a memory allocation.
 func StringToBytes(s string) []byte {
 	return *(*[]byte)(unsafe.Pointer(

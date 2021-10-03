@@ -6,26 +6,27 @@ import (
 	"encoding/binary"
 	"errors"
 	"net"
-	"strconv"
 )
 
 type serverConnect struct {
 	net.Conn
-	encType    uint8
-	password   string
-	remoteAddr string
+	encType  uint8
+	password string
+	dstip    string
+	dstport  uint16
 }
 
-func DialServer(addr, remoteAddr, passwd string, encType uint8) (c net.Conn, err error) {
-	conn, err := net.Dial("tcp", addr)
+func DialServer(proxyServerAddr, dstip string, dstport uint16, passwd string, encType uint8) (c net.Conn, err error) {
+	conn, err := net.Dial("tcp", proxyServerAddr)
 	if err != nil {
 		return nil, err
 	}
 	serverConn := &serverConnect{
-		Conn:       conn,
-		encType:    encType,
-		password:   passwd,
-		remoteAddr: remoteAddr,
+		Conn:     conn,
+		encType:  encType,
+		password: passwd,
+		dstip:    dstip,
+		dstport:  dstport,
 	}
 
 	if err = serverConn.handshake(); err != nil {
@@ -51,31 +52,15 @@ func (c *serverConnect) handshake() (err error) {
 		err = tlsConn.Handshake()
 		c.Conn = tlsConn
 	default:
-		err = errors.New("Encryption type not supported")
+		return errors.New("Encryption type not supported")
 	}
 	if err != nil {
 		return
 	}
-
-	// 给服务器校验密码
-	_, err = c.Write([]byte(c.password))
-	if err != nil {
-		return
-	}
-
-	ip, port, err := net.SplitHostPort(c.remoteAddr)
-	if err != nil {
-		err = errors.New("remote addr Parse Error")
-	}
-
-	destAddr := make([]byte, 6)
-
-	ipVal := common.Inet_addr(ip)
-	portVal, _ := strconv.Atoi(port)
-
-	binary.BigEndian.PutUint32(destAddr, ipVal)
-	binary.BigEndian.PutUint16(destAddr[4:6], uint16(portVal))
-
-	_, err = c.Write(destAddr)
+	buf := make([]byte, len(c.password) + 6)
+	copy(buf, common.StringToBytes(c.password))
+	binary.BigEndian.PutUint32(buf[len(c.password):], common.Inet_addr(c.dstip))
+	binary.BigEndian.PutUint16(buf[len(c.password) + 4:], c.dstport)
+	_, err = c.Write(buf)
 	return
 }

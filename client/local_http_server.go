@@ -7,6 +7,7 @@ import (
 	"io"
 	"net"
 	"net/http"
+	"strconv"
 	"sync"
 	"time"
 )
@@ -28,9 +29,10 @@ func NewLocalHttpServer(localAddr string, servers []string, encType uint8, passw
 		timeout:     timeout,
 	}
 }
-func (lhs *LocalHttpServer) getServerConn(remoteAddr string) (net.Conn, error) {
+func (lhs *LocalHttpServer) getServerConn(ip, port string) (net.Conn, error) {
+	p, _ := strconv.Atoi(port)
 	for i := 0; i < len(lhs.serverAddrs); i++ {
-		conn, err := DialServer(lhs.serverAddrs[i], remoteAddr, lhs.password, lhs.encType)
+		conn, err := DialServer(lhs.serverAddrs[i], ip, uint16(p), lhs.password, lhs.encType)
 		if err == nil {
 			return conn, nil
 		}
@@ -71,9 +73,9 @@ func (lhs *LocalHttpServer) Run() {
 
 			var conn net.Conn
 			if !IPisProxy(ip) {
-				conn, err = net.Dial("tcp", ip + ":" + port)
+				conn, err = net.Dial("tcp", ip+":"+port)
 			} else {
-				conn, err = lhs.getServerConn(ip + ":" + port)
+				conn, err = lhs.getServerConn(ip, port)
 			}
 			if err != nil {
 				w.WriteHeader(http.StatusRequestTimeout)
@@ -120,9 +122,9 @@ func (lhs *LocalHttpServer) Run() {
 
 			var conn net.Conn
 			if !IPisProxy(ip) {
-				conn, err = net.Dial("tcp", ip + ":" + port)
+				conn, err = net.Dial("tcp", ip+":"+port)
 			} else {
-				conn, err = lhs.getServerConn(ip + ":" + port)
+				conn, err = lhs.getServerConn(ip, port)
 			}
 			if err != nil {
 				w.WriteHeader(http.StatusRequestTimeout)

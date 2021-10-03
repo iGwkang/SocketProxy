@@ -2,6 +2,7 @@ package common
 
 import (
 	"crypto/sha1"
+	"encoding/binary"
 	"net/http"
 	"strings"
 	"testing"
@@ -41,8 +42,23 @@ func TestSha1Sum(t *testing.T) {
 }
 
 func TestStringToBytes(t *testing.T) {
-	str := "abcdefg"
 
-	t.Log(StringToBytes(str))
+}
 
+func BenchmarkStringToBytes(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		passwd := "afafasdajgdhvcziydawgajsdhgjahsgdhcfjhzxc"
+		buf := make([]byte, len(passwd) + 6)
+		copy(buf, StringToBytes(passwd))
+		binary.BigEndian.PutUint32(buf[len(passwd):], Inet_addr("127.0.0.2"))
+		binary.BigEndian.PutUint16(buf[len(passwd) + 4:], 865)
+
+		//dstAddr := make([]byte, 6)
+		//binary.BigEndian.PutUint32(dstAddr, Inet_addr("127.0.0.2"))
+		//binary.BigEndian.PutUint16(dstAddr[4:6], 865)
+		//
+		//buf := []byte(passwd)
+		//buf = append(buf, dstAddr...)
+
+	}
 }

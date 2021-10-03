@@ -12,7 +12,7 @@ func main() {
 	}()
 
 	go func() {
-		httpServer := NewLocalHttpServer(conf.ListenHttpAddr, conf.TcpServerAddrs,conf.Encryption,  conf.Password, conf.Timeout)
+		httpServer := NewLocalHttpServer(conf.ListenHttpAddr, conf.TcpServerAddrs, conf.Encryption, conf.Password, conf.Timeout)
 		httpServer.Run()
 	}()
 

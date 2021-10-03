@@ -121,25 +121,25 @@ func (s *DNSClient) handleDNS(buf []byte, cliAddr *net.UDPAddr) {
 		}
 
 		/*
-		err = dnsMsg.Unpack(data)
-		if err != nil {
-			Logger.Error(err)
-			return
-		}
-
-		for i := 0; i < len(dnsMsg.Answer); {
-			if _, ok := dnsMsg.Answer[i].(*dns.AAAA); ok {
-				dnsMsg.Answer = append(dnsMsg.Answer[:i], dnsMsg.Answer[i+1:]...)
-			} else {
-				i++
+			err = dnsMsg.Unpack(data)
+			if err != nil {
+				Logger.Error(err)
+				return
 			}
-		}
-		sendData, err = dnsMsg.PackBuffer(data)
-		if err != nil {
-			Logger.Error(err)
-			return
-		}
-		 */
+
+			for i := 0; i < len(dnsMsg.Answer); {
+				if _, ok := dnsMsg.Answer[i].(*dns.AAAA); ok {
+					dnsMsg.Answer = append(dnsMsg.Answer[:i], dnsMsg.Answer[i+1:]...)
+				} else {
+					i++
+				}
+			}
+			sendData, err = dnsMsg.PackBuffer(data)
+			if err != nil {
+				Logger.Error(err)
+				return
+			}
+		*/
 	}
 
 	_, err = s.listener.WriteToUDP(sendData, cliAddr)

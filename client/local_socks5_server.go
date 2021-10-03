@@ -28,9 +28,9 @@ func NewLocalSocks5Server(localAddr string, servers []string, encType uint8, pas
 	}
 }
 
-func (lss *LocalSocks5Server) getServerConn(remoteAddr string) (net.Conn, error) {
+func (lss *LocalSocks5Server) getServerConn(ip string, port uint16) (net.Conn, error) {
 	for i := 0; i < len(lss.serverAddrs); i++ {
-		conn, err := DialServer(lss.serverAddrs[i], remoteAddr, lss.password, lss.encType)
+		conn, err := DialServer(lss.serverAddrs[i], ip, port, lss.password, lss.encType)
 		if err == nil {
 			return conn, nil
 		}
@@ -62,7 +62,6 @@ func (lss *LocalSocks5Server) Run() {
 		}
 		go lss.TcpClientHandle(conn)
 	}
-	return
 }
 
 func (lss *LocalSocks5Server) TcpClientHandle(conn net.Conn) {
@@ -80,7 +79,7 @@ func (lss *LocalSocks5Server) TcpClientHandle(conn net.Conn) {
 	}
 
 	if !IPisProxy(ip) {
-		serverConn, err := net.DialTimeout("tcp", ip+":"+port, lss.timeout)
+		serverConn, err := net.DialTimeout("tcp", ip+":"+strconv.Itoa(int(port)), lss.timeout)
 		if err != nil {
 			Logger.Warn(err)
 			return
@@ -94,19 +93,19 @@ func (lss *LocalSocks5Server) TcpClientHandle(conn net.Conn) {
 		common.Relay(serverConn, conn)
 	} else {
 		// 与服务器建立连接
-		serverConn, err := lss.getServerConn(ip + ":" + port)
+		serverConn, err := lss.getServerConn(ip, port)
 		if err != nil {
 			Logger.Warn(err)
 			return
 		}
 		defer serverConn.Close()
 
-		Logger.Debugf("start relay %s <--> %s <--> %s", conn.RemoteAddr(), serverConn.RemoteAddr(), ip+":"+port)
+		Logger.Debugf("start relay %v <--> %v <--> %v:%v", conn.RemoteAddr(), serverConn.RemoteAddr(), ip, port)
 		common.Relay(serverConn, conn)
 	}
 }
 
-func getSock5Addr(conn net.Conn) (ip, port string, err error) {
+func getSock5Addr(conn net.Conn) (ip string, port uint16, err error) {
 	msg := make([]byte, 512)
 	_, err = conn.Read(msg)
 	if err != nil {
@@ -122,7 +121,7 @@ func getSock5Addr(conn net.Conn) (ip, port string, err error) {
 }
 
 // socks5
-func getSocks5DstAddr(conn net.Conn) (ip, port string, err error) {
+func getSocks5DstAddr(conn net.Conn) (ip string, port uint16, err error) {
 	// 客户端回应：Socks服务端不需要验证方式
 	_, err = conn.Write([]byte{0x05, 0x00})
 	if err != nil {
@@ -157,10 +156,9 @@ func getSocks5DstAddr(conn net.Conn) (ip, port string, err error) {
 		return
 	}
 	// 端口
-	port = strconv.Itoa(int(binary.BigEndian.Uint16(b[n-2 : n])))
+	port = binary.BigEndian.Uint16(b[n-2 : n])
 
 	//响应客户端连接成功
 	_, err = conn.Write([]byte{0x05, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00})
 	return
 }
-

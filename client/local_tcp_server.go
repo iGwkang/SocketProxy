@@ -8,6 +8,7 @@ import (
 	"errors"
 	"net"
 	"os"
+	"strconv"
 	"syscall"
 	"time"
 )
@@ -30,9 +31,10 @@ func NewLocalTCPServer(localAddr string, servers []string, encType uint8, passwd
 	}
 }
 
-func (lts *LocalTCPServer) getServerConn(remoteAddr string) (net.Conn, error) {
+func (lts *LocalTCPServer) getServerConn(ip, port string) (net.Conn, error) {
+	p, _ := strconv.Atoi(port)
 	for i := 0; i < len(lts.serverAddrs); i++ {
-		conn, err := DialServer(lts.serverAddrs[i], remoteAddr, lts.password, lts.encType)
+		conn, err := DialServer(lts.serverAddrs[i], ip, uint16(p), lts.password, lts.encType)
 		if err == nil {
 			return conn, nil
 		}
@@ -99,7 +101,7 @@ func (lts *LocalTCPServer) TcpClientHandle(conn net.Conn) {
 		common.Relay(serverConn, conn)
 	} else {
 		// 与服务器建立连接
-		serverConn, err := lts.getServerConn(ip + ":" + port)
+		serverConn, err := lts.getServerConn(ip, port)
 		if err != nil {
 			Logger.Warn(err)
 			return
